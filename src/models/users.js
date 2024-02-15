@@ -15,7 +15,7 @@ const verifyUser = async ({data}) => {
 
     const connection = await pool.getConnection()
     
-    const sqlBoss = 'SELECT id_boss, fullname , address , email, password , date_created FROM chiefs WHERE email = ? ;'
+    const sqlBoss = 'SELECT id_boss, fullname , address , email, password, permit_level , activation_status ,date_created FROM chiefs WHERE email = ? ;'
     const [boss] = await connection.execute(sqlBoss,[email])
     
     const sqlSeller = 'SELECT id_seller, fullname , address , email, password, activation_status, permit_level FROM sellers WHERE email = ? ;'
@@ -48,10 +48,14 @@ const verifyUser = async ({data}) => {
           fullname: boss[0].fullname,
           address: boss[0].address,
           email: boss[0].email,
+          level: boss[0].permit_level,
+          activationStatus: boss[0].activation_status,
           timeLicense: fecha.timeLicense,
           date_created: fecha.date_create,
           date_expires: fecha.date_expires
         }
+
+        console.log(tokenInfo)
 
         const match = await bcrypt.compare(password, boss[0].password) 
         
@@ -83,6 +87,8 @@ const verifyUser = async ({data}) => {
         activationStatus: seller[0].activation_status,
         level: seller[0].permit_level
       }
+
+      console.log(tokenInfo)
 
       if (seller[0].activation_status == 1){
         if (email === seller[0].email) {
