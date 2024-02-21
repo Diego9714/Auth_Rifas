@@ -15,7 +15,7 @@ controller.logUser = async (req, res) => {
 
 controller.stats = async (req, res) => {
   try {
-    const data = { id } = req.body
+    const data = { id_supervisor , type_supervisor } = req.params
     const user  = await Users.statsUser(data)
     res.status(user.code).json(user)
   } catch (err) {

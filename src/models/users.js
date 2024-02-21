@@ -142,75 +142,121 @@ const verifyUser = async ({data}) => {
   }
 }
 
-// // ----- User statistics -----
-// const statsUser = async ({data}) => {
-//   try {
-//     let msg = {
-//       status: false,
-//       message: "Statics not found",
-//       code: 500
-//     }
+// ----- User statistics -----
+const statsUser = async ({data}) => {
+  try {
+    let msg = {
+      status: false,
+      message: "Statics not found",
+      code: 500
+    }
     
-//     let sql = `SELECT id_boss FROM chiefs WHERE id_boss = '${id}';`
-//     let boss = await pool.query(sql)
+    const connection = await pool.getConnection()
 
-//     let sql0 = `SELECT id_seller FROM sellers WHERE id_seller = '${id}';`
-//     let seller = await pool.query(sql0)
+    if(type_supervisor == "ADM"){
+      // Cantidad de Clientes
+      let sqlClient = `SELECT COUNT(id_client) AS client_count FROM clients WHERE id_supervisor = ? AND type_supervisor = ? AND activation_status = ? ;`
+      let [clients] = await connection.execute(sqlClient,[id_supervisor , type_supervisor, 1])
+  
+      // console.log(clients)
 
-//     if (boss.rows.length > 0) {
+      // Cantidad de Rifas
+      let sqlRaffles = `SELECT COUNT(id_raffle) AS raffle_count FROM raffles WHERE id_boss = ? AND activation_status = ?;`
+      let [raffles] = await connection.execute(sqlRaffles,[id_supervisor , 1])
 
-      
+      // console.log(raffles)
 
-//     }else if(seller.rows.length > 0){
-//       let tokenInfo = {
-//         id_boss: seller.rows[0].id_seller,
-//         name: seller.rows[0].name,
-//         lastname: seller.rows[0].lastname,
-//         email: seller.rows[0].email
-//       }
+      // Cantidad de Tickets Pagados
+      let sqlTicketsSold = `SELECT COUNT(id_ticket) AS ticketSold_count FROM tickets WHERE id_supervisor = ? AND type_supervisor = ? AND status_ticket = ? ;`
+      let [tickets_sold] = await connection.execute(sqlTicketsSold,[id_supervisor,type_supervisor,1])
 
-//       if (email === seller.rows[0].email) {
-//         const match = await bcrypt.compare(password, seller.rows[0].password) 
-        
-//         const token = jwt.sign(tokenInfo, KEY, { algorithm: "HS256" })
+      console.log(tickets_sold)
 
-//         if (match) {
-//           msg = {
-//             status: true,
-//             message: "Logged successfully seller",
-//             code: 200,
-//             infoUser: token
-//           }
-//         } else {
-//           msg = {
-//             status: false,
-//             message: "Incorrect password",
-//             code: 500
-//           }
-//         }
-//       } else {
-//         msg = {
-//           status: false,
-//           message: "User not found, verify your email and password",
-//           code: 404
-//         }
-//       }
-//     }
+      // Cantidad de Tickets Abonados
+      let sqlTicketsPaid = `SELECT COUNT(id_ticket) AS ticketPaid_count FROM tickets WHERE id_supervisor = ? AND type_supervisor = ? AND status_ticket = ? ;`
+      let [tickets_paid] = await connection.execute(sqlTicketsPaid,[id_supervisor,type_supervisor,2])
 
-//     return msg
+      console.log(tickets_paid)
 
-//   } catch (err) {
-//     let msg = {
-//       status: false,
-//       message: "Something went wrong...",
-//       code: 500,
-//       error: err
-//     }
-//     return msg
-//   }
-// }
+      let infoStats = {
+        clients: clients[0].client_count,
+        raffles: raffles[0].raffle_count,
+        tickets_sold: tickets_sold[0].ticketSold_count,
+        tickets_paid: tickets_paid[0].ticketPaid_count,
+      }
+
+      if (clients.length >= 0 || raffles.length >= 0 || tickets_sold.length >= 0 || tickets_paid.length >= 0) {
+        msg = {
+          status: true,
+          message: "Stats found",
+          code: 200,
+          data: infoStats,
+        }
+      }
+    }
+    if(type_supervisor == "VED"){
+      // Cantidad de Clientes
+      let sqlClient = `SELECT COUNT(id_client) AS client_count FROM clients WHERE id_supervisor = ? AND type_supervisor = ? AND activation_status = ? ;`
+      let [clients] = await connection.execute(sqlClient,[id_supervisor , type_supervisor, 1])
+  
+      // console.log(clients)
+
+      // Obtener Id_boss 
+      let sqlBoss = `SELECT id_boss FROM sellers WHERE id_seller = ? ;`
+      const [boss] = await connection.execute(sqlBoss, [id_supervisor])
+
+      let id_boss = boss[0].id_boss
+
+      // Cantidad de Rifas      
+      let sqlRaffles = `SELECT COUNT(id_raffle) AS raffle_count FROM raffles WHERE id_boss = ? AND activation_status = ?;`
+      let [raffles] = await connection.execute(sqlRaffles,[id_boss, 1])
+
+      console.log(raffles)
+
+      // Cantidad de Tickets Pagados
+      let sqlTicketsSold = `SELECT COUNT(id_ticket) AS ticketSold_count FROM tickets WHERE id_supervisor = ? AND type_supervisor = ? AND status_ticket = ? ;`
+      let [tickets_sold] = await connection.execute(sqlTicketsSold,[id_supervisor,type_supervisor,1])
+
+      // console.log(tickets_sold)
+
+      // Cantidad de Tickets Abonados
+      let sqlTicketsPaid = `SELECT COUNT(id_ticket) AS ticketPaid_count FROM tickets WHERE id_supervisor = ? AND type_supervisor = ? AND status_ticket = ? ;`
+      let [tickets_paid] = await connection.execute(sqlTicketsPaid,[id_supervisor,type_supervisor,2])
+
+      // console.log(tickets_paid)
+
+      let infoStats = {
+        clients: clients[0].client_count,
+        raffles: raffles[0].raffle_count,
+        tickets_sold: tickets_sold[0].ticketSold_count,
+        tickets_paid: tickets_paid[0].ticketPaid_count,
+      }
+
+      if (clients.length >= 0 || raffles.length >= 0 || tickets_sold.length >= 0 || tickets_paid.length >= 0) {
+        msg = {
+          status: true,
+          message: "Stats found",
+          code: 200,
+          data: infoStats,
+        }
+      }
+    }
+
+    connection.release()
+
+    return msg
+  } catch (err) {
+    let msg = {
+      status: false,
+      message: "Something went wrong...",
+      code: 500,
+      error: err
+    }
+    return msg
+  }
+}
 
 module.exports = {
   verifyUser,
-  // statsUser
+  statsUser
 }
